@@ -16,7 +16,7 @@ import java.io.IOException;
 
 public class MyFrame extends JFrame implements ActionListener, ChangeListener {
 
-    private long start,end;
+    private long start, end;
     private JButton grey, negative, blur, outline;
     private ImageIcon originalImageIcon, changedImageIcon;
     private JMenuItem openFile, saveFile, closeFile, exitFile ;
@@ -24,7 +24,7 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
     private JPanel changedImagePanel = new JPanel();
     private JComboBox comboBox = new JComboBox();
     JPanel container = new JPanel();
-
+    /*+++++++++++++++++++++++++*/
     private BufferedImage originalImage = null;
 
     private int scaleWidth;
