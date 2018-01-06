@@ -536,14 +536,12 @@ public class MyFrame extends JFrame implements ActionListener, ComponentListener
         changedImagePanel.removeAll();
         changedImagePanel.repaint();
     }
-
     private void clearImagesPanel() {
         originalImagePanel.removeAll();
         originalImagePanel.repaint();
         changedImagePanel.removeAll();
         changedImagePanel.repaint();
     }
-
     private void getSizeScale() {
 
         scaleWidth = originalImagePanel.getWidth();
@@ -579,25 +577,24 @@ public class MyFrame extends JFrame implements ActionListener, ComponentListener
 
         }
     }
-
     private void saveFile() throws IOException {
-        if (originalImageIcon!= null && originalImageIcon.equals(changedImageIcon)) {
+
            JFileChooser chooser = new JFileChooser();
            int ret = chooser.showSaveDialog(this);
             if (ret == JFileChooser.APPROVE_OPTION) {
-                BufferedImage image = (BufferedImage) changedImageIcon.getImage();
-                File output = new File("newJPG");
-                        ImageIO.write(image, "jpg",output);
+                BufferedImage image = changeImage;
+                File output = new File("" +
+                        "D:/ПРОГРАММИРОВАНИЕ/IT_CLASS/2 семестр/Java/MyNewPhotoshop_v3.0-master/src/main/newIMG.png");
+                        ImageIO.write(image, "png",output);
                 chooser.setSelectedFile(output);
             }
-        }
+
         clearImagesPanel();
     }
-
     private void closeFile() {
+
         clearImagesPanel();
     }
-
     private void exitFile() {
         //clearImagesPanel();
         dispose();
