@@ -14,24 +14,25 @@ import java.io.IOException;
 
 public class MyFrame extends JFrame implements ActionListener, ComponentListener {
 
-    private long start, end;
-    private JButton grey, negative, blur, outline;
-    private ImageIcon originalImageIcon, changedImageIcon;
-    private JMenuItem openFile, saveFile, closeFile, exitFile ;
-    private JPanel originalImagePanel = new JPanel();
-    private JPanel changedImagePanel = new JPanel();
-    private JComboBox comboBox = new JComboBox();
+    protected long start, end;
+    protected JButton grey, negative, blur, outline;
+    protected ImageIcon originalImageIcon, changedImageIcon;
+    protected JMenuItem openFile, saveFile, closeFile, exitFile ;
+    protected JPanel originalImagePanel = new JPanel();
+    protected JPanel changedImagePanel = new JPanel();
+    protected JComboBox comboBox = new JComboBox();
     JPanel container = new JPanel();
 
-    private BufferedImage originalImage = null;
-    private BufferedImage changeImage = null;
+    protected BufferedImage originalImage = null;
+    protected BufferedImage changeImage = null;
 
-    private int scaleWidth;
-    private int scaleHeight;
+    protected int scaleWidth;
+    protected int scaleHeight;
 
     JPanel buttomPanel = new JPanel();
     JLabel timeLable = new JLabel();
-    public MyFrame() throws IOException {
+
+    protected MyFrame() throws IOException {
 
         this.setTitle("miniPhotoshop");
         this.setSize(1000, 500);
@@ -59,7 +60,6 @@ public class MyFrame extends JFrame implements ActionListener, ComponentListener
         add(this.setMenu(), BorderLayout.NORTH);
         add(container, BorderLayout.CENTER);
         add(this.setButtonPanel(), BorderLayout.EAST);
-
         //pack();
         this.setVisible(true);
     }
@@ -175,8 +175,14 @@ public class MyFrame extends JFrame implements ActionListener, ComponentListener
                 }
                 if ( comboBox.getSelectedItem() == "параллельный (Thread)" ){
                     start = System.nanoTime();
-
                     setGreyThread();
+                   /* try {
+                        //new MyThread();
+                        MyThread myThread = new MyThread();
+                        myThread.run();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }*/
 
                     end = System.nanoTime();
                     String str = ("Time: " + (end - start)/1e9);
@@ -377,8 +383,66 @@ public class MyFrame extends JFrame implements ActionListener, ComponentListener
     }
     private void setGreyThread(){
 
-        changedImagePanel.add(new JLabel("setGreyThread ждёт лучших времён )))"));
-}
+        changeImage = new BufferedImage(originalImage.getWidth(),
+                originalImage.getHeight(),
+                originalImage.getType());
+
+        Graphics g = changeImage.getGraphics();
+        g.drawImage(originalImage, 0, 0, null);
+        int height = changeImage.getHeight();
+        int width = changeImage.getWidth();
+        Thread th1 = new Thread(){
+            public  void  run(){
+            for (int i = 0; i < height/2; i++) {
+                for (int j = 0; j < width; j++) {
+                    int pixel = changeImage.getRGB(j, i);
+
+                    int alpha = (pixel & 0xFF000000) >>> 24;
+
+                    int red = (pixel & 0x00FF0000) >>> 16;
+                    int green = (pixel & 0x0000FF00) >>> 8;
+                    int blue = (pixel & 0x000000FF);
+
+                    int mean = (red + green + blue) / 3;
+                    int newPixel = (alpha << 24) + (mean << 16) + (mean << 8) + mean;
+
+                    changeImage.setRGB(j, i, newPixel);
+                }
+            }
+        }
+        };
+        Thread th2 = new Thread(){
+            public  void  run(){
+                for (int i = height/2; i < height; i++) {
+                    for (int j = 0; j < width; j++) {
+                        int pixel = changeImage.getRGB(j, i);
+
+                        int alpha = (pixel & 0xFF000000) >>> 24;
+
+                        int red = (pixel & 0x00FF0000) >>> 16;
+                        int green = (pixel & 0x0000FF00) >>> 8;
+                        int blue = (pixel & 0x000000FF);
+
+                        int mean = (red + green + blue) / 3;
+                        int newPixel = (alpha << 24) + (mean << 16) + (mean << 8) + mean;
+
+                        changeImage.setRGB(j, i, newPixel);
+                    }
+                }
+            }
+        };
+        th1.start();
+        th2.start();
+        try {
+            th1.join();
+            th2.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        changedImageIcon = new ImageIcon(changeImage.getScaledInstance(scaleWidth, scaleHeight, originalImage.SCALE_SMOOTH));
+        changedImagePanel.add(new JLabel(changedImageIcon));
+
+    }
     private void setGreyExecutor(){
         changedImagePanel.add(new JLabel("setGreyExecutor ждёт лучших времён )))")); }
     private void setGreyFork_Join(){
