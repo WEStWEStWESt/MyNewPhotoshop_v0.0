@@ -1,12 +1,10 @@
-import sun.plugin.javascript.navig.JSType;
-
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ConvolveOp;
@@ -14,7 +12,7 @@ import java.awt.image.Kernel;
 import java.io.File;
 import java.io.IOException;
 
-public class MyFrame extends JFrame implements ActionListener, ChangeListener {
+public class MyFrame extends JFrame implements ActionListener, ComponentListener {
 
     private long start, end;
     private JButton grey, negative, blur, outline;
@@ -24,24 +22,23 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
     private JPanel changedImagePanel = new JPanel();
     private JComboBox comboBox = new JComboBox();
     JPanel container = new JPanel();
-    /*+++++++++++++++++++++++++*/
+
     private BufferedImage originalImage = null;
+    private BufferedImage changeImage = null;
 
     private int scaleWidth;
     private int scaleHeight;
 
     JPanel buttomPanel = new JPanel();
     JLabel timeLable = new JLabel();
-
-    private final int IMAGE_PANEL_WIDTH = 300;
-    private final int IMAGE_PANEL_HEIGHT = 300;
-
     public MyFrame() throws IOException {
 
         this.setTitle("miniPhotoshop");
-        this.setSize (820,390);
+        this.setSize(1000, 500);
       //  this.setResizable(false);
         this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
+        addComponentListener(this);
 
         this.setLayout(new BorderLayout());
 
@@ -50,10 +47,11 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
         container.setLayout(new GridLayout(1,2));
 
         originalImagePanel.setBorder(BorderFactory.createTitledBorder("Оригинал"));
-        originalImagePanel.setPreferredSize(new Dimension(IMAGE_PANEL_WIDTH, IMAGE_PANEL_HEIGHT));
-
+        originalImagePanel.setLayout(new BorderLayout(1, 1));
+        //originalImagePanel.setPreferredSize(new Dimension(IMAGE_PANEL_WIDTH, IMAGE_PANEL_HEIGHT));
         changedImagePanel.setBorder(BorderFactory.createTitledBorder("Измененная"));
-        changedImagePanel.setPreferredSize(new Dimension(IMAGE_PANEL_WIDTH, IMAGE_PANEL_HEIGHT));
+        changedImagePanel.setLayout(new BorderLayout(1, 1));
+        //changedImagePanel.setPreferredSize(new Dimension(IMAGE_PANEL_WIDTH, IMAGE_PANEL_HEIGHT));
 
         container.add(originalImagePanel);
         container.add(changedImagePanel);
@@ -347,21 +345,20 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
     }
 
     private void setGreyConsistent(){
-        BufferedImage newGreyImage;
 
-        newGreyImage = new BufferedImage(originalImage.getWidth(),
+        changeImage = new BufferedImage(originalImage.getWidth(),
                 originalImage.getHeight(),
                 originalImage.getType());
 
-        Graphics g = newGreyImage .getGraphics();
+        Graphics g = changeImage.getGraphics();
         g.drawImage(originalImage, 0, 0, null);
 
-        int height = newGreyImage.getHeight();
-        int width = newGreyImage.getWidth();
+        int height = changeImage.getHeight();
+        int width = changeImage.getWidth();
 
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
-                int pixel = newGreyImage.getRGB(j, i);
+                int pixel = changeImage.getRGB(j, i);
 
                 int alpha = (pixel & 0xFF000000) >>> 24;
 
@@ -372,10 +369,10 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
                 int mean = (red + green + blue) / 3;
                 int newPixel = (alpha << 24) + (mean << 16) + (mean << 8) + mean;
 
-                newGreyImage.setRGB(j, i, newPixel);
+                changeImage.setRGB(j, i, newPixel);
             }
         }
-        changedImageIcon = new ImageIcon(newGreyImage.getScaledInstance(scaleWidth,scaleHeight, originalImage.SCALE_SMOOTH));
+        changedImageIcon = new ImageIcon(changeImage.getScaledInstance(scaleWidth, scaleHeight, originalImage.SCALE_SMOOTH));
         changedImagePanel.add(new JLabel(changedImageIcon));
     }
     private void setGreyThread(){
@@ -388,22 +385,20 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
         changedImagePanel.add(new JLabel("setGreyFork_Join ждёт лучших времён )))")); }
 
     private void setNegativeConsistent(){
-       //changedImagePanel.add(new JLabel("setNegativeConsistent ждёт лучших времён )))"));
-        BufferedImage newNegativeImage;
 
-        newNegativeImage = new BufferedImage(originalImage.getWidth(),
+        changeImage = new BufferedImage(originalImage.getWidth(),
                 originalImage.getHeight(),
                 originalImage.getType());
 
-        Graphics g = newNegativeImage .getGraphics();
+        Graphics g = changeImage.getGraphics();
         g.drawImage(originalImage, 0, 0, null);
 
-        int height = newNegativeImage.getHeight();
-        int width = newNegativeImage.getWidth();
+        int height = changeImage.getHeight();
+        int width = changeImage.getWidth();
 
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
-                int pixel = newNegativeImage.getRGB(j, i);
+                int pixel = changeImage.getRGB(j, i);
 
                 int red = 0xFF - (pixel >> 16) & 0xFF;
                 int green = 0xFF - (pixel >> 8) & 0xFF;
@@ -411,10 +406,10 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
 
                 int newPixel = (0xFF000000 | red << 16 | green << 8 | blue);
 
-                newNegativeImage.setRGB(j, i, newPixel);
+                changeImage.setRGB(j, i, newPixel);
             }
         }
-        changedImageIcon = new ImageIcon(newNegativeImage.
+        changedImageIcon = new ImageIcon(changeImage.
                 getScaledInstance(scaleWidth, scaleHeight, originalImage.SCALE_SMOOTH));
         changedImagePanel.add(new JLabel(changedImageIcon));
     }
@@ -431,13 +426,11 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
 
     private void setBlurConsistent(){
 
-        BufferedImage newBlurImage;
-
-        newBlurImage = new BufferedImage(originalImage.getWidth(),
+        changeImage = new BufferedImage(originalImage.getWidth(),
                 originalImage.getHeight(),
                 originalImage.getType());
 
-        Graphics g = newBlurImage .getGraphics();
+        Graphics g = changeImage.getGraphics();
         g.drawImage(originalImage, 0, 0, null);
 
         float[] matrix = new float[400];
@@ -447,7 +440,7 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
 
         BufferedImageOp op = new ConvolveOp( new Kernel(20, 20, matrix),
                 ConvolveOp.EDGE_NO_OP, null );
-        BufferedImage blurredImage = op.filter(originalImage,newBlurImage);
+        BufferedImage blurredImage = op.filter(originalImage, changeImage);
 
         changedImageIcon = new ImageIcon(blurredImage.getScaledInstance(scaleWidth,scaleHeight, originalImage.SCALE_SMOOTH));
         changedImagePanel.add(new JLabel(changedImageIcon));
@@ -460,13 +453,12 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
         changedImagePanel.add(new JLabel("setBlurFork_Join ждёт лучших времён )))"));  }
 
     private void setOutLineConsistent(){
-        BufferedImage image;
 
-        image = new BufferedImage(originalImage.getWidth(),
+        changeImage = new BufferedImage(originalImage.getWidth(),
                 originalImage.getHeight(),
                 originalImage.getType());
 
-        Graphics g = image .getGraphics();
+        Graphics g = changeImage.getGraphics();
         g.drawImage(originalImage, 0, 0, null);
 
             int[][] sx = {{-1,0,1},{-1,0,1},{-1,0,1}};
@@ -475,15 +467,15 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
             // a sobel template 2D array for calculation
             int[][] sob;
 
-            int width = image.getWidth();
-            int height = image.getHeight();
+        int width = changeImage.getWidth();
+        int height = changeImage.getHeight();
 
                // at first need to greyscale and populate sob[][] array
             sob = new int[width][height];
 
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
-                    int pixel = image.getRGB(x, y);
+                    int pixel = changeImage.getRGB(x, y);
 
                     int alpha = (pixel & 0xFF000000) >>> 24;
 
@@ -495,7 +487,7 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
                     sob[x][y] = mean;
                     int newPixel = (alpha << 24) + (mean << 16) + (mean << 8) + mean;
 
-                    image.setRGB(x, y, newPixel);
+                    changeImage.setRGB(x, y, newPixel);
                 }
             }
 
@@ -523,10 +515,10 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
                     }
 
                     Color pix = new Color(pixel,pixel,pixel);
-                    image.setRGB(x, y, pix.getRGB());
+                    changeImage.setRGB(x, y, pix.getRGB());
                 }
             }
-        changedImageIcon = new ImageIcon(image.getScaledInstance(scaleWidth,scaleHeight, originalImage.SCALE_SMOOTH));
+        changedImageIcon = new ImageIcon(changeImage.getScaledInstance(scaleWidth, scaleHeight, originalImage.SCALE_SMOOTH));
         changedImagePanel.add(new JLabel(changedImageIcon));
     }
     private void setOutLineThread(){
@@ -552,15 +544,14 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
         changedImagePanel.repaint();
     }
 
-    private void setSizeScale(){
+    private void getSizeScale() {
 
-        scaleWidth = IMAGE_PANEL_WIDTH;
-        scaleHeight = IMAGE_PANEL_HEIGHT;
+        scaleWidth = originalImagePanel.getWidth();
+        scaleHeight = originalImagePanel.getHeight();
 
-        if (originalImage.getWidth() > originalImage.getHeight()) {
+        if (originalImage.getWidth() >= originalImage.getHeight()) {
             scaleHeight = (scaleWidth * originalImage.getHeight()) / originalImage.getWidth();
-        }
-        if (originalImage.getWidth() < originalImage.getHeight()) {
+        } else {
             scaleWidth = (scaleHeight * originalImage.getWidth()) / originalImage.getHeight();
         }
     }
@@ -576,13 +567,13 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
         File file = fileopen.getSelectedFile();
         originalImage = ImageIO.read(file);
 
-
         if (ret == JFileChooser.APPROVE_OPTION) {
 //-----------------------------------------------------------------------------------
 
-            setSizeScale();
+            getSizeScale();
 
-            originalImageIcon = new ImageIcon(originalImage.getScaledInstance(scaleWidth,scaleHeight, originalImage.SCALE_SMOOTH));
+            originalImageIcon = new ImageIcon(originalImage.getScaledInstance(
+                    scaleWidth, scaleHeight, originalImage.SCALE_SMOOTH));
             originalImagePanel.add(new JLabel(originalImageIcon));//, SwingConstants.CENTER
 //-----------------------------------------------------------------------------------
 
@@ -613,7 +604,32 @@ public class MyFrame extends JFrame implements ActionListener, ChangeListener {
     }
 
     @Override
-    public void stateChanged(ChangeEvent e) {
+    public void componentResized(ComponentEvent e) {
+        if (originalImage != null) {
+            getSizeScale();
+            originalImageIcon.setImage(originalImage.getScaledInstance(scaleWidth, scaleHeight, originalImage.SCALE_SMOOTH));
+        }
+        if (changeImage != null) {
+            getSizeScale();
+            changedImageIcon.setImage(changeImage.getScaledInstance(scaleWidth, scaleHeight, changeImage.SCALE_SMOOTH));
+        }
+        //revalidate();
+        repaint();
+    }
+
+    @Override
+    public void componentMoved(ComponentEvent e) {
+
+    }
+
+    @Override
+    public void componentShown(ComponentEvent e) {
+
+    }
+
+    @Override
+    public void componentHidden(ComponentEvent e) {
+
 
     }
 }
