@@ -11,6 +11,7 @@ import java.awt.image.ConvolveOp;
 import java.awt.image.Kernel;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.*;
 
 public class MyFrame extends JFrame implements ActionListener, ComponentListener {
 
@@ -32,7 +33,7 @@ public class MyFrame extends JFrame implements ActionListener, ComponentListener
     JPanel buttomPanel = new JPanel();
     JLabel timeLable = new JLabel();
 
-    private int THREAD_COUNTS = 6;
+    private int STREAM_COUNTS = 2;
 
     protected MyFrame() throws IOException {
 
@@ -394,14 +395,14 @@ public class MyFrame extends JFrame implements ActionListener, ComponentListener
         int height = changeImage.getHeight();
         int width = changeImage.getWidth();
 
-        Thread[] threads = new Thread[THREAD_COUNTS];
+        Thread[] threads = new Thread[STREAM_COUNTS];
 
-        for( int k = 0; k < THREAD_COUNTS; k++ ){
+        for(int k = 0; k < STREAM_COUNTS; k++ ){
             int n = k;
             threads[n] = new Thread(){
                 @Override
                 public void run() {
-                    for ( int i = n / THREAD_COUNTS; i < height*(n+1)/THREAD_COUNTS; i++ ){
+                    for (int i = n / STREAM_COUNTS; i < height*(n+1)/ STREAM_COUNTS; i++ ){
                         for ( int j = 0 ; j < width; j++  ){
                             int pixel = changeImage.getRGB(j, i);
 
@@ -431,8 +432,77 @@ public class MyFrame extends JFrame implements ActionListener, ComponentListener
         changedImageIcon = new ImageIcon(changeImage.getScaledInstance(scaleWidth, scaleHeight, originalImage.SCALE_SMOOTH));
         changedImagePanel.add(new JLabel(changedImageIcon));
     }
-    private void setGreyExecutor(){
-        changedImagePanel.add(new JLabel("setGreyExecutor ждёт лучших времён )))")); }
+    private void setGreyExecutor() {
+
+        //ExecutorService ex = Executors.newFixedThreadPool(STREAM_COUNTS);
+
+        ExecutorService ex1 = Executors.newFixedThreadPool(STREAM_COUNTS);
+
+        changeImage = new BufferedImage(originalImage.getWidth(),originalImage.getHeight(),originalImage.getType());
+        Graphics g = changeImage.getGraphics();
+        g.drawImage(originalImage, 0, 0, null);
+        int height = changeImage.getHeight();
+        int width = changeImage.getWidth();
+
+        Future f1 = ex1.submit(new Callable<Object>() {
+
+            @Override
+            public BufferedImage call() throws Exception {
+                for(int k = 0; k < STREAM_COUNTS; k++ ){
+                    int n = k;
+                    for (int i = n / STREAM_COUNTS; i < height*(n+1)/ STREAM_COUNTS; i++ ){
+                        for ( int j = 0 ; j < width; j++  ){
+                            int pixel = changeImage.getRGB(j, i);
+                            int alpha = (pixel & 0xFF000000) >>> 24;
+
+                            int red = (pixel & 0x00FF0000) >>> 16;
+                            int green = (pixel & 0x0000FF00) >>> 8;
+                            int blue = (pixel & 0x000000FF);
+
+                            int mean = (red + green + blue) / 3;
+                            int newPixel = (alpha << 24) + (mean << 16) + (mean << 8) + mean;
+
+                            changeImage.setRGB(j, i, newPixel);
+                        }
+                    }
+                }
+               return changeImage;
+            }
+        });
+        changedImageIcon = new ImageIcon(changeImage.getScaledInstance(scaleWidth, scaleHeight, originalImage.SCALE_SMOOTH));
+        changedImagePanel.add(new JLabel(changedImageIcon));
+        ex1.shutdown();
+        //f1.isDone();
+
+
+
+        /*ex.execute(new Runnable() {
+            public void run() {
+                for(int k = 0; k < STREAM_COUNTS; k++ ){
+                    int n = k;
+                    for (int i = n / STREAM_COUNTS; i < height*(n+1)/ STREAM_COUNTS; i++ ){
+                        for ( int j = 0 ; j < width; j++  ){
+                            int pixel = changeImage.getRGB(j, i);
+                            int alpha = (pixel & 0xFF000000) >>> 24;
+
+                            int red = (pixel & 0x00FF0000) >>> 16;
+                            int green = (pixel & 0x0000FF00) >>> 8;
+                            int blue = (pixel & 0x000000FF);
+
+                            int mean = (red + green + blue) / 3;
+                            int newPixel = (alpha << 24) + (mean << 16) + (mean << 8) + mean;
+
+                            changeImage.setRGB(j, i, newPixel);
+                        }
+                    }
+                }
+            }
+
+        });
+            changedImageIcon = new ImageIcon(changeImage.getScaledInstance(scaleWidth, scaleHeight, originalImage.SCALE_SMOOTH));
+            changedImagePanel.add(new JLabel(changedImageIcon));
+        ex.shutdown();*/
+    }
     private void setGreyFork_Join(){
         changedImagePanel.add(new JLabel("setGreyFork_Join ждёт лучших времён )))")); }
 
