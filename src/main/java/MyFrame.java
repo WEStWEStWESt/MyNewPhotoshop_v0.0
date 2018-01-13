@@ -32,6 +32,8 @@ public class MyFrame extends JFrame implements ActionListener, ComponentListener
     JPanel buttomPanel = new JPanel();
     JLabel timeLable = new JLabel();
 
+    private int THREAD_COUNTS = 6;
+
     protected MyFrame() throws IOException {
 
         this.setTitle("miniPhotoshop");
@@ -391,57 +393,43 @@ public class MyFrame extends JFrame implements ActionListener, ComponentListener
         g.drawImage(originalImage, 0, 0, null);
         int height = changeImage.getHeight();
         int width = changeImage.getWidth();
-        Thread th1 = new Thread(){
-            public  void  run(){
-            for (int i = 0; i < height/2; i++) {
-                for (int j = 0; j < width; j++) {
-                    int pixel = changeImage.getRGB(j, i);
 
-                    int alpha = (pixel & 0xFF000000) >>> 24;
+        Thread[] threads = new Thread[THREAD_COUNTS];
 
-                    int red = (pixel & 0x00FF0000) >>> 16;
-                    int green = (pixel & 0x0000FF00) >>> 8;
-                    int blue = (pixel & 0x000000FF);
+        for( int k = 0; k < THREAD_COUNTS; k++ ){
+            int n = k;
+            threads[n] = new Thread(){
+                @Override
+                public void run() {
+                    for ( int i = n / THREAD_COUNTS; i < height*(n+1)/THREAD_COUNTS; i++ ){
+                        for ( int j = 0 ; j < width; j++  ){
+                            int pixel = changeImage.getRGB(j, i);
 
-                    int mean = (red + green + blue) / 3;
-                    int newPixel = (alpha << 24) + (mean << 16) + (mean << 8) + mean;
+                            int alpha = (pixel & 0xFF000000) >>> 24;
 
-                    changeImage.setRGB(j, i, newPixel);
-                }
-            }
-        }
-        };
-        Thread th2 = new Thread(){
-            public  void  run(){
-                for (int i = height/2; i < height; i++) {
-                    for (int j = 0; j < width; j++) {
-                        int pixel = changeImage.getRGB(j, i);
+                            int red = (pixel & 0x00FF0000) >>> 16;
+                            int green = (pixel & 0x0000FF00) >>> 8;
+                            int blue = (pixel & 0x000000FF);
 
-                        int alpha = (pixel & 0xFF000000) >>> 24;
+                            int mean = (red + green + blue) / 3;
+                            int newPixel = (alpha << 24) + (mean << 16) + (mean << 8) + mean;
 
-                        int red = (pixel & 0x00FF0000) >>> 16;
-                        int green = (pixel & 0x0000FF00) >>> 8;
-                        int blue = (pixel & 0x000000FF);
-
-                        int mean = (red + green + blue) / 3;
-                        int newPixel = (alpha << 24) + (mean << 16) + (mean << 8) + mean;
-
-                        changeImage.setRGB(j, i, newPixel);
+                            changeImage.setRGB(j, i, newPixel);
+                        }
                     }
                 }
+            };
+
+            threads[k].start();
+            try {
+                threads[k].join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        };
-        th1.start();
-        th2.start();
-        try {
-            th1.join();
-            th2.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
+
         changedImageIcon = new ImageIcon(changeImage.getScaledInstance(scaleWidth, scaleHeight, originalImage.SCALE_SMOOTH));
         changedImagePanel.add(new JLabel(changedImageIcon));
-
     }
     private void setGreyExecutor(){
         changedImagePanel.add(new JLabel("setGreyExecutor ждёт лучших времён )))")); }
@@ -694,3 +682,100 @@ public class MyFrame extends JFrame implements ActionListener, ComponentListener
 
     }
 }
+
+/*Thread th1 = new Thread(){
+            public  void  run(){
+                for (int i = 0; i < height/4; i++) {
+                    for (int j = 0; j < width; j++) {
+                        int pixel = changeImage.getRGB(j, i);
+
+                        int alpha = (pixel & 0xFF000000) >>> 24;
+
+                        int red = (pixel & 0x00FF0000) >>> 16;
+                        int green = (pixel & 0x0000FF00) >>> 8;
+                        int blue = (pixel & 0x000000FF);
+
+                        int mean = (red + green + blue) / 3;
+                        int newPixel = (alpha << 24) + (mean << 16) + (mean << 8) + mean;
+
+                        changeImage.setRGB(j, i, newPixel);
+                    }
+                }
+                System.out.println("1");
+            }
+        };
+        Thread th2 = new Thread(){
+            public  void  run(){
+                for (int i = height/4; i < height/2; i++) {
+                    for (int j = 0; j < width; j++) {
+                        int pixel = changeImage.getRGB(j, i);
+
+                        int alpha = (pixel & 0xFF000000) >>> 24;
+
+                        int red = (pixel & 0x00FF0000) >>> 16;
+                        int green = (pixel & 0x0000FF00) >>> 8;
+                        int blue = (pixel & 0x000000FF);
+
+                        int mean = (red + green + blue) / 3;
+                        int newPixel = (alpha << 24) + (mean << 16) + (mean << 8) + mean;
+
+                        changeImage.setRGB(j, i, newPixel);
+                    }
+                }
+                System.out.println("2");
+            }
+        };
+        Thread th3 = new Thread(){
+            public  void  run(){
+                for (int i = height/2; i < 3*height/4; i++) {
+                    for (int j = 0; j < width; j++) {
+                        int pixel = changeImage.getRGB(j, i);
+
+                        int alpha = (pixel & 0xFF000000) >>> 24;
+
+                        int red = (pixel & 0x00FF0000) >>> 16;
+                        int green = (pixel & 0x0000FF00) >>> 8;
+                        int blue = (pixel & 0x000000FF);
+
+                        int mean = (red + green + blue) / 3;
+                        int newPixel = (alpha << 24) + (mean << 16) + (mean << 8) + mean;
+
+                        changeImage.setRGB(j, i, newPixel);
+                    }
+                }
+                System.out.println("3");
+            }
+        };
+        Thread th4 = new Thread(){
+            public  void  run(){
+                for (int i = 3*height/4; i < height; i++) {
+                    for (int j = 0; j < width; j++) {
+                        int pixel = changeImage.getRGB(j, i);
+
+                        int alpha = (pixel & 0xFF000000) >>> 24;
+
+                        int red = (pixel & 0x00FF0000) >>> 16;
+                        int green = (pixel & 0x0000FF00) >>> 8;
+                        int blue = (pixel & 0x000000FF);
+
+                        int mean = (red + green + blue) / 3;
+                        int newPixel = (alpha << 24) + (mean << 16) + (mean << 8) + mean;
+
+                        changeImage.setRGB(j, i, newPixel);
+                    }
+                }
+                System.out.println("4");
+            }
+        };
+        th1.start();
+        th2.start();
+        th3.start();
+        th4.start();
+        try {
+            th1.join();
+            th2.join();
+            th3.join();
+            th4.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }*/
